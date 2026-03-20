@@ -230,18 +230,17 @@ end
 
 function QBCore.Functions.GetPlayersFromCoords(coords, distance)
     local players = GetActivePlayers()
-    local ped = PlayerPedId()
     if coords then
         coords = type(coords) == 'table' and vec3(coords.x, coords.y, coords.z) or coords
     else
-        coords = GetEntityCoords(ped)
+        coords = GetEntityCoords(PlayerPedId())
     end
     distance = distance or 5
     local closePlayers = {}
-    for _, player in ipairs(players) do
-        local targetCoords = GetEntityCoords(GetPlayerPed(player))
-        local targetdistance = #(targetCoords - coords)
-        if targetdistance <= distance then
+    local dist = distance -- ローカルキャッシュ
+    for i = 1, #players do
+        local player = players[i]
+        if #(GetEntityCoords(GetPlayerPed(player)) - coords) <= dist then
             closePlayers[#closePlayers + 1] = player
         end
     end
@@ -250,22 +249,18 @@ end
 
 function QBCore.Functions.GetClosestPlayer(coords)
     local ped = PlayerPedId()
-    if coords then
-        coords = type(coords) == 'table' and vec3(coords.x, coords.y, coords.z) or coords
-    else
-        coords = GetEntityCoords(ped)
-    end
-    local closestPlayers = QBCore.Functions.GetPlayersFromCoords(coords)
+    coords = coords and (type(coords) == 'table' and vec3(coords.x, coords.y, coords.z) or coords) or GetEntityCoords(ped)
+    local players = GetActivePlayers()
+    local selfId = PlayerId()
     local closestDistance = -1
     local closestPlayer = -1
-    for i = 1, #closestPlayers, 1 do
-        if closestPlayers[i] ~= PlayerId() and closestPlayers[i] ~= -1 then
-            local pos = GetEntityCoords(GetPlayerPed(closestPlayers[i]))
-            local distance = #(pos - coords)
-
-            if closestDistance == -1 or closestDistance > distance then
-                closestPlayer = closestPlayers[i]
-                closestDistance = distance
+    for i = 1, #players do
+        local p = players[i]
+        if p ~= selfId then
+            local d = #(GetEntityCoords(GetPlayerPed(p)) - coords)
+            if closestDistance == -1 or d < closestDistance then
+                closestPlayer = p
+                closestDistance = d
             end
         end
     end
