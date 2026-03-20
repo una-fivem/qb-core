@@ -1,24 +1,28 @@
 CreateThread(function()
     while true do
-        local sleep = 0
         if LocalPlayer.state.isLoggedIn then
-            sleep = (1000 * 60) * QBCore.Config.UpdateInterval
             TriggerServerEvent('QBCore:UpdatePlayer')
+            Wait((1000 * 60) * QBCore.Config.UpdateInterval)
+        else
+            Wait(1000) -- 未ログイン時は1秒待機
         end
-        Wait(sleep)
     end
 end)
 
 CreateThread(function()
     while true do
-        if LocalPlayer.state.isLoggedIn then
-            if (QBCore.PlayerData.metadata['hunger'] <= 0 or QBCore.PlayerData.metadata['thirst'] <= 0) and not (QBCore.PlayerData.metadata['isdead'] or QBCore.PlayerData.metadata['inlaststand']) then
+        if not LocalPlayer.state.isLoggedIn then
+            Wait(5000)
+            -- continue相当 (goto使用 or 構造変更)
+        else
+            local meta = QBCore.PlayerData.metadata
+            if (meta['hunger'] <= 0 or meta['thirst'] <= 0)
+                and not meta['isdead']
+                and not meta['inlaststand'] then
                 local ped = PlayerPedId()
-                local currentHealth = GetEntityHealth(ped)
-                local decreaseThreshold = math.random(5, 10)
-                SetEntityHealth(ped, currentHealth - decreaseThreshold)
+                SetEntityHealth(ped, GetEntityHealth(ped) - math.random(5, 10))
             end
+            Wait(QBCore.Config.StatusInterval)
         end
-        Wait(QBCore.Config.StatusInterval)
     end
 end)
